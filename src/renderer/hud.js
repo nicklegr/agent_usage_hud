@@ -64,6 +64,17 @@ function formatTime(ts) {
   return `${hh}:${mm}`;
 }
 
+function formatDateTimeShort(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '';
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${m}/${day} ${hh}:${mm}`;
+}
+
 function applyConfig(cfg) {
   currentConfig = cfg;
   document.body.classList.remove('theme-light', 'theme-dark', 'scale-small', 'scale-medium', 'scale-large');
@@ -121,13 +132,25 @@ function render(state) {
       ? `${weeklyPct}%`
       : '0%';
 
+    const reset5hText = !hideSub && item.primaryResetAt
+      ? `↻ ${formatTime(item.primaryResetAt)}`
+      : '';
+
+    const resetWkText = item.weeklyResetAt
+      ? `↻ ${formatDateTimeShort(item.weeklyResetAt)}`
+      : '';
+
     tile.innerHTML = `
       <span class="status-dot"></span>
       <div class="tile-header">
         <span class="tile-icon">${ICONS[item.id] || ICONS.antigravity}</span>
+        ${hideSub ? '' : `<span class="tile-reset-5h">${reset5hText}</span>`}
       </div>
       <div class="tile-main ${lvl}">${mainText}</div>
-      ${hideSub ? '' : `<div class="tile-sub">${subText}</div>`}
+      <div class="tile-footer">
+        ${hideSub ? '' : `<div class="tile-sub">${subText}</div>`}
+        <div class="tile-reset-wk">${resetWkText}</div>
+      </div>
       <div class="tile-bar"><div class="tile-bar-fill ${barLvl}" style="width: ${barWidth};"></div></div>
     `;
 

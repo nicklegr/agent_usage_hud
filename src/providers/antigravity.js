@@ -46,9 +46,16 @@ function parseStatusLineQuotaObject(obj) {
     if (pct === null) continue;
 
     const resetSec = typeof info.reset_in_seconds === 'number' ? info.reset_in_seconds : null;
+    let resetAt = null;
+    if (info.reset_time && !String(info.reset_time).startsWith('1970-01-01')) {
+      const t = new Date(info.reset_time).getTime();
+      if (!Number.isNaN(t)) resetAt = t;
+    } else if (resetSec !== null && resetSec > 0) {
+      resetAt = Date.now() + resetSec * 1000;
+    }
     const resetTxt = formatResetDuration(resetSec);
     details.push(`${bucketId}: ${pct}%${resetTxt ? ` (リセット: ${resetTxt})` : ''}`);
-    parsedBuckets.push({ id: bucketId.toLowerCase(), pct, resetSec });
+    parsedBuckets.push({ id: bucketId.toLowerCase(), pct, resetSec, resetAt });
   }
 
   if (parsedBuckets.length === 0) return null;
@@ -60,17 +67,26 @@ function parseStatusLineQuotaObject(obj) {
     (b) => /week|7d/.test(b.id) || (b.resetSec !== null && b.resetSec > 21600)
   );
 
+  let fiveHResetAt = null;
+  let weeklyResetAt = null;
+
   if (shortBuckets.length > 0) {
-    fiveH = Math.min(...shortBuckets.map((b) => b.pct));
+    shortBuckets.sort((a, b) => a.pct - b.pct);
+    fiveH = shortBuckets[0].pct;
+    fiveHResetAt = shortBuckets[0].resetAt;
   }
   if (weeklyBuckets.length > 0) {
-    weekly = Math.min(...weeklyBuckets.map((b) => b.pct));
+    weeklyBuckets.sort((a, b) => a.pct - b.pct);
+    weekly = weeklyBuckets[0].pct;
+    weeklyResetAt = weeklyBuckets[0].resetAt;
   }
   if (weekly === null && fiveH === null) {
-    weekly = Math.min(...parsedBuckets.map((b) => b.pct));
+    parsedBuckets.sort((a, b) => a.pct - b.pct);
+    weekly = parsedBuckets[0].pct;
+    weeklyResetAt = parsedBuckets[0].resetAt;
   }
 
-  return { weekly, fiveH, details };
+  return { weekly, fiveH, fiveHResetAt, weeklyResetAt, details };
 }
 
 function parseAgyUsageCommand(obj) {
@@ -89,17 +105,21 @@ function parseAgyUsageCommand(obj) {
       const pct = clampPercent(b.remaining_fraction * 100);
       const win = String(b.window || b.id || '').toLowerCase();
 
+      let resetAt = null;
       let resetTxt = null;
       if (b.reset_time && !String(b.reset_time).startsWith('1970-01-01')) {
-        const diffSec = Math.floor((new Date(b.reset_time).getTime() - Date.now()) / 1000);
-        resetTxt = formatResetDuration(diffSec);
+        const t = new Date(b.reset_time).getTime();
+        if (!Number.isNaN(t)) {
+          resetAt = t;
+          resetTxt = formatResetDuration(Math.floor((t - Date.now()) / 1000));
+        }
       }
 
       if (win === '5h' || /5h/.test(win)) {
-        fiveHList.push(pct);
+        fiveHList.push({ pct, resetAt });
         details.push(`${groupName} 5時間: ${pct}%${resetTxt ? ` (リセット: ${resetTxt})` : ''}`);
       } else if (win === 'weekly' || /week/.test(win)) {
-        weeklyList.push(pct);
+        weeklyList.push({ pct, resetAt });
         details.push(`${groupName} 週間: ${pct}%${resetTxt ? ` (リセット: ${resetTxt})` : ''}`);
       } else {
         details.push(`${groupName} ${b.name || b.id}: ${pct}%`);
@@ -109,9 +129,14 @@ function parseAgyUsageCommand(obj) {
 
   if (fiveHList.length === 0 && weeklyList.length === 0) return null;
 
+  fiveHList.sort((a, b) => a.pct - b.pct);
+  weeklyList.sort((a, b) => a.pct - b.pct);
+
   return {
-    fiveH: fiveHList.length > 0 ? Math.min(...fiveHList) : null,
-    weekly: weeklyList.length > 0 ? Math.min(...weeklyList) : null,
+    fiveH: fiveHList.length > 0 ? fiveHList[0].pct : null,
+    fiveHResetAt: fiveHList.length > 0 ? fiveHList[0].resetAt : null,
+    weekly: weeklyList.length > 0 ? weeklyList[0].pct : null,
+    weeklyResetAt: weeklyList.length > 0 ? weeklyList[0].resetAt : null,
     details
   };
 }
@@ -244,9 +269,11 @@ async function fetchAntigravityQuota(serviceConfig = {}) {
           status: 'ok',
           headerLabel: '',
           primaryPercent: primary,
+          primaryResetAt: parsed.fiveHResetAt || null,
           secondaryLabel: '週間',
           secondaryPercent: parsed.weekly,
           weeklyPercent: parsed.weekly,
+          weeklyResetAt: parsed.weeklyResetAt || null,
           detail: parsed.details.join('\n') || 'statusLine キャッシュから取得しました',
           updatedAt: cached.updated_at || updatedAt
         };
@@ -299,9 +326,11 @@ async function fetchAntigravityQuota(serviceConfig = {}) {
       status: 'ok',
       headerLabel: '',
       primaryPercent: parsed.fiveH,
+      primaryResetAt: parsed.fiveHResetAt || null,
       secondaryLabel: '週間',
       secondaryPercent: parsed.weekly,
       weeklyPercent: parsed.weekly,
+      weeklyResetAt: parsed.weeklyResetAt || null,
       detail: parsed.details.join('\n') || 'Antigravity CLI から取得しました',
       updatedAt
     };

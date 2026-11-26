@@ -91,13 +91,13 @@ function getScaleDimensions(config) {
     ['antigravity', 'codex', 'muse'].filter((id) => config.services?.[id]?.enabled !== false).length
   );
   const map = {
-    small: { tile: 86, gap: 8, pad: 12 },
-    medium: { tile: 106, gap: 10, pad: 14 },
-    large: { tile: 128, gap: 12, pad: 16 }
+    small: { tileW: 96, tileH: 108, gap: 8, pad: 12 },
+    medium: { tileW: 114, tileH: 126, gap: 10, pad: 14 },
+    large: { tileW: 136, tileH: 148, gap: 12, pad: 16 }
   };
   const m = map[config.scale] || map.medium;
-  const width = enabledCount * m.tile + (enabledCount - 1) * m.gap + m.pad * 2;
-  const height = m.tile + m.pad * 2;
+  const width = enabledCount * m.tileW + (enabledCount - 1) * m.gap + m.pad * 2;
+  const height = m.tileH + m.pad * 2;
   return { width, height };
 }
 

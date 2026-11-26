@@ -223,8 +223,14 @@ async function fetchMuseFromWebSession(session) {
       details.push(`${sub.topupRowLabel || '追加トークン'}: ${sub.topupRowValueLabel}`);
     }
 
+    const weeklyResetAt =
+      typeof sub.usage.resetsAt === 'number' && sub.usage.resetsAt > 0
+        ? sub.usage.resetsAt * 1000
+        : null;
+
     return {
       weeklyRemaining,
+      weeklyResetAt,
       detail: details.join('\n')
     };
   } catch (err) {
@@ -295,9 +301,11 @@ async function fetchMuseQuota(serviceConfig = {}, electronCtx = {}) {
     status: 'ok',
     headerLabel: '',
     primaryPercent: webResult.weeklyRemaining,
+    primaryResetAt: null,
     secondaryLabel: null,
     secondaryPercent: null,
     weeklyPercent: webResult.weeklyRemaining,
+    weeklyResetAt: webResult.weeklyResetAt || null,
     hideSecondary: true,
     detail: webResult.detail,
     updatedAt

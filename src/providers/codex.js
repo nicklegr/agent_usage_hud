@@ -136,6 +136,16 @@ async function fetchCodexQuota(serviceConfig = {}) {
 
     const weeklyRemaining = weekly ? clampPercent(100 - weekly.used_percent) : null;
     const shortRemaining = short ? clampPercent(100 - short.used_percent) : null;
+    const shortResetAt = short
+      ? (typeof short.reset_at === 'number' && short.reset_at > 0
+          ? short.reset_at * 1000
+          : (typeof short.reset_after_seconds === 'number' ? updatedAt + short.reset_after_seconds * 1000 : null))
+      : null;
+    const weeklyResetAt = weekly
+      ? (typeof weekly.reset_at === 'number' && weekly.reset_at > 0
+          ? weekly.reset_at * 1000
+          : (typeof weekly.reset_after_seconds === 'number' ? updatedAt + weekly.reset_after_seconds * 1000 : null))
+      : null;
 
     const detailLines = [];
     if (data.plan_type) detailLines.push(`プラン: ${data.plan_type}`);
@@ -157,9 +167,11 @@ async function fetchCodexQuota(serviceConfig = {}) {
       status: 'ok',
       headerLabel: '',
       primaryPercent: shortRemaining,
+      primaryResetAt: shortResetAt,
       secondaryLabel: '週間',
       secondaryPercent: weeklyRemaining,
       weeklyPercent: weeklyRemaining,
+      weeklyResetAt,
       detail: detailLines.join('\n') || '取得成功',
       updatedAt
     };
