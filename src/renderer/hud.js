@@ -119,8 +119,8 @@ function render(state) {
       : '--%';
 
     const subText = item.secondaryPercent !== null && item.secondaryPercent !== undefined
-      ? `${item.secondaryLabel || '週間'} ${item.secondaryPercent}%`
-      : `${item.secondaryLabel || '週間'} --%`;
+      ? `${item.secondaryPercent}%`
+      : '--%';
 
     const weeklyPct = item.weeklyPercent !== undefined
       ? item.weeklyPercent
@@ -148,8 +148,8 @@ function render(state) {
       </div>
       <div class="tile-main ${lvl}">${mainText}</div>
       <div class="tile-footer">
-        ${hideSub ? '' : `<div class="tile-sub">${subText}</div>`}
-        <div class="tile-reset-wk">${resetWkText}</div>
+        ${hideSub ? '' : `<span class="tile-sub">${subText}</span>`}
+        ${resetWkText ? `<span class="tile-reset-wk">${resetWkText}</span>` : ''}
       </div>
       <div class="tile-bar"><div class="tile-bar-fill ${barLvl}" style="width: ${barWidth};"></div></div>
     `;
