@@ -1,11 +1,56 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execFile, exec } = require('child_process');
+const { spawn, exec } = require('child_process');
 const { promisify } = require('util');
 
-const execFileAsync = promisify(execFile);
 const execAsync = promisify(exec);
+
+function runHiddenCommand(exe, args, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(exe, args, {
+      windowsHide: true,
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        CI: '1',
+        TERM: 'dumb',
+        NO_COLOR: '1'
+      }
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      try { child.kill(); } catch {}
+      reject(new Error('agy CLI timed out'));
+    }, timeoutMs);
+
+    child.stdout.on('data', (chunk) => { stdout += chunk.toString('utf8'); });
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString('utf8'); });
+    child.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(err);
+    });
+    child.on('close', (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (code === 0 || stdout.includes('{')) {
+        resolve(stdout);
+      } else {
+        reject(new Error(stderr.trim() || `agy exited with code ${code}`));
+      }
+    });
+  });
+}
 
 function clampPercent(val) {
   if (typeof val !== 'number' || Number.isNaN(val)) return null;
@@ -290,11 +335,7 @@ async function fetchAntigravityQuota(serviceConfig = {}) {
       const res = await execAsync(customCommand, { timeout: 15000, windowsHide: true });
       stdout = res.stdout || '';
     } else {
-      const res = await execFileAsync(cliPath, ['-p', '/usage', '--output-format', 'json'], {
-        timeout: 15000,
-        windowsHide: true
-      });
-      stdout = res.stdout || '';
+      stdout = await runHiddenCommand(cliPath, ['-p', '/usage', '--output-format', 'json'], 15000);
     }
 
     let parsed;
