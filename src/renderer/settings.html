@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Usage HUD - 設定</title>
+  <link rel="stylesheet" href="./settings.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1>Agent Usage HUD 設定</h1>
+      <button id="btn-test-refresh" class="btn btn-secondary">今すぐ再取得</button>
+    </header>
+
+    <section class="card">
+      <h2>表示設定</h2>
+      <div class="row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="alwaysOnTop" />
+          常に最前面に表示
+        </label>
+      </div>
+      <div class="grid-2">
+        <label class="field">
+          <span>テーマ</span>
+          <select id="theme">
+            <option value="light">ライト (Stream Deck風)</option>
+            <option value="dark">ダーク</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>タイルサイズ</span>
+          <select id="scale">
+            <option value="small">小 (S)</option>
+            <option value="medium">中 (M)</option>
+            <option value="large">大 (L)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>不透明度 (<span id="opacity-val">96%</span>)</span>
+          <input type="range" id="opacity" min="0.4" max="1" step="0.02" />
+        </label>
+        <label class="field">
+          <span>自動更新間隔 (秒)</span>
+          <input type="number" id="refreshIntervalSec" min="30" max="3600" step="30" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2>Antigravity</h2>
+        <label class="checkbox-label">
+          <input type="checkbox" id="svc-antigravity-enabled" />
+          表示する
+        </label>
+      </div>
+      <div id="status-antigravity" class="status-box">ステータス取得中...</div>
+      <label class="field">
+        <span>statusLine クォータ JSON パス (公式 statusLine ブリッジ連携用)</span>
+        <input type="text" id="svc-antigravity-quotaCachePath" />
+      </label>
+      <label class="field">
+        <span>Antigravity CLI パス (既定: agy)</span>
+        <input type="text" id="svc-antigravity-cliPath" placeholder="agy または C:\path\to\agy.exe" />
+      </label>
+      <label class="field">
+        <span>カスタム取得コマンド (任意・JSONまたは%出力コマンド)</span>
+        <input type="text" id="svc-antigravity-customCommand" placeholder="空欄なら agy -p /usage --output-format json を実行" />
+      </label>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2>Codex</h2>
+        <label class="checkbox-label">
+          <input type="checkbox" id="svc-codex-enabled" />
+          表示する
+        </label>
+      </div>
+      <div id="status-codex" class="status-box">ステータス取得中...</div>
+      <label class="field">
+        <span>Codex auth.json パス</span>
+        <input type="text" id="svc-codex-authPath" />
+      </label>
+    </section>
+
+    <section class="card">
+      <div class="card-title-row">
+        <h2>Meta Muse (muse.ai)</h2>
+        <label class="checkbox-label">
+          <input type="checkbox" id="svc-muse-enabled" />
+          表示する
+        </label>
+      </div>
+      <div id="status-muse" class="status-box">ステータス取得中...</div>
+      <label class="field">
+        <span>Muse Usage URL</span>
+        <input type="text" id="svc-muse-usageUrl" placeholder="https://muse.ai" />
+      </label>
+      <div class="btn-row">
+        <button id="btn-muse-login" class="btn btn-primary" type="button">Muse にログイン (muse.ai)</button>
+        <button id="btn-muse-logout" class="btn btn-danger" type="button">セッションをクリア</button>
+      </div>
+      <p class="hint">
+        「Muse にログイン」を押すと専用ブラウザが開きます。muse.ai にサインインして Settings → Usage を確認したあとウィンドウを閉じると、自動で残量を取得します。
+      </p>
+    </section>
+
+    <footer class="footer-actions">
+      <span id="save-toast" class="toast"></span>
+      <button id="btn-save" class="btn btn-primary">設定を保存して反映</button>
+    </footer>
+  </div>
+
+  <script src="./settings.js"></script>
+</body>
+</html>

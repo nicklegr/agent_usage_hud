@@ -1,0 +1,14 @@
+{
+  "name": "agent-usage-hud",
+  "version": "0.1.0",
+  "description": "Always-on-top Windows HUD for AI service remaining quotas (Antigravity, Codex, Muse)",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test:providers": "node src/providers/test-cli.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^35.0.0"
+  }
+}
